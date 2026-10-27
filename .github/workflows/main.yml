@@ -1,0 +1,40 @@
+
+name: Monitor Arbitragem Binance
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Testar Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -c 'import os,requests; r=requests.post("https://api.telegram.org/bot"+os.environ["TELEGRAM_TOKEN"]+"/sendMessage",json={"chat_id":os.environ["TELEGRAM_CHAT_ID"],"text":"Monitor Kawasaki: Telegram conectado!"},timeout=15); r.raise_for_status(); assert r.json().get("ok"), "Telegram recusou a mensagem"'
+
+      - name: Verificar arbitragem
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python arb_scanner.py tri --exchange binance --no-keys --max-fee-legs 3 --loop 0
+  
